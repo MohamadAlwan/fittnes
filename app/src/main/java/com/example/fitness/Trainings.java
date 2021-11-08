@@ -1,9 +1,12 @@
 package com.example.fitness;
 
+import androidx.annotation.DrawableRes;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
@@ -19,12 +22,13 @@ public class Trainings extends AppCompatActivity {
 private String status;
 private ListView listView;
 private String exercises;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_trainings);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        //get BMI from previous activity
+
         Intent intent = getIntent();
          status = intent.getStringExtra("Status");
         populateListView();
@@ -37,6 +41,7 @@ private String exercises;
                                     long id) {
                 if (position == 0){
                   exercises = "Legs";
+
                 }
                 else if (position == 1){
                     exercises = "Chest" ;
@@ -47,6 +52,7 @@ private String exercises;
                 Intent intent = new Intent(Trainings.this,ExercisesDetails.class);
                 intent.putExtra("exercises", exercises);
                 intent.putExtra("Status",status);
+                intent.putExtra("position", (int)position);
                 startActivity(intent);
 
             }

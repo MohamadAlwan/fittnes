@@ -18,12 +18,8 @@ import android.widget.Toast;
 import com.google.gson.Gson;
 
 public class BMI extends AppCompatActivity {
-    public static final String STATUS = "STATUS";
-    public static final String WEIGHT = "WEIGHT";
-    public static final String HEIGHT = "HEIGHT";
-    public static final String FLAG = "FLAG";
-    public static final String FLAGBMI = "FLAGBMI";
-    public static final String BMI_RESULT = "BMI";
+
+    public static final String DATA="DATA";
 
     private EditText edtWeight ;
     private double BMI;
@@ -35,7 +31,9 @@ public class BMI extends AppCompatActivity {
     private String status;
     private boolean flag = false; //عشان اعرف هل تم التسيف ولا لا
     private boolean calculateIsClicked = false; //if the user not calculate his BMI then he can't move to next step
-    private boolean checkCahngeBmi = false; //اذا كانت المعلومات محفوظة والمستخدم مل تغير عالوزن او عالطول هاض بفحصلي اذا انحسبت ال BMI الجديدة
+    private boolean checkCahngeBmi = false; //اذا كانت المعلومات محفوظة والمستخدم عمل تغير عالوزن او عالطول هاض بفحصلي اذا انحسبت ال BMI الجديدة
+    private  int Weight;
+    private int Height;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,24 +46,32 @@ public class BMI extends AppCompatActivity {
     }
 
     private void checkPrefs() {
-        flag = prefs.getBoolean(FLAG,false); // بنادي الجيت بوليان اللي بالشيرد بريفيرينس وبعطي اسمو اللي هو Flag اذا ما وجدو حط الديفولت تاعو false
+        Gson gson = new Gson();
+        String str = prefs.getString(DATA,"");
+        if (!str.equals("")) {
+            BMI_Data bmi = gson.fromJson(str,BMI_Data.class);
+             bmi = gson.fromJson(str, BMI_Data.class);
 
-        if(flag){ //اذا وجد الفلاج (يعني كانت قيمتو true )
-            //بسترجع باقي المعلومات
-            int weight = prefs.getInt(WEIGHT,0);
-            int height = prefs.getInt(HEIGHT,0);
-            String bmiResult = prefs.getString(BMI_RESULT,"");
-            status = prefs.getString(STATUS,"");
-            calculateIsClicked = prefs.getBoolean(FLAGBMI,false);
-            txtBMI_Result.setText(bmiResult);
-            txtBMI_Result.setVisibility(View.VISIBLE);
-            edtWeight.setText(""+weight);
-            edtHeight.setText(""+height);
+            flag = bmi.isFlag();
 
-            chk.setChecked(true);//حط قيمة CheckBox = true لانو اليوزر كان مختارو
+            if(flag){ //اذا وجد الفلاج (يعني كانت قيمتو true )
+                //بسترجع باقي المعلومات
+                Weight = bmi.getWeight();
+                Height = bmi.getHeight();
+                String bmiResult = bmi.getBmiResult();
+                status = bmi.getStatus();
+                calculateIsClicked = bmi.isFlagBMI();
+                txtBMI_Result.setText(bmiResult);
+                txtBMI_Result.setVisibility(View.VISIBLE);
+                edtWeight.setText(""+Weight);
+                edtHeight.setText(""+Height);
+
+                chk.setChecked(true);//حط قيمة CheckBox = true لانو اليوزر كان مختارو
 
 
+            }
         }
+
     }
 
     private void setupSharedPrefs() {
@@ -85,26 +91,28 @@ public class BMI extends AppCompatActivity {
           InputMethodManager mgr = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
           mgr.hideSoftInputFromWindow(view.getWindowToken(),0);
 
-          int Weight = prefs.getInt(WEIGHT,0);
-          int Height = prefs.getInt(HEIGHT,0);
-
           int weight = Integer.parseInt(edtWeight.getText().toString());
           int height = Integer.parseInt(edtHeight.getText().toString());
 
+
           if (weight > 0 && height > 0 ) {
-              double bmi = BMI(weight, height);
-              BMI = Math.round(bmi*100.0)/100.0;
+              double bmiR = BMI(weight, height);
+              BMI = Math.round(bmiR*100.0)/100.0;
               status = Status(BMI);
+
               if( (weight != Weight || height != Height)) {
                   checkCahngeBmi = true;
               }
               calculateIsClicked = true;
+
+
               txtBMI_Result.setText("your BMI is "+ BMI  +", this is considered " + status);
               txtBMI_Result.setVisibility(View.VISIBLE);
           }
           else {
               Toast.makeText(this,"please inter correct information",Toast.LENGTH_SHORT).show();
           }
+
       }
     catch (Exception e){
         Toast.makeText(this,"please inter correct information",Toast.LENGTH_SHORT).show();
@@ -137,42 +145,40 @@ public class BMI extends AppCompatActivity {
             Toast.makeText(this,"please calculate your BMI ",Toast.LENGTH_SHORT).show();
         }
         else{
-            int Weight = prefs.getInt(WEIGHT,0);
-            int Height = prefs.getInt(HEIGHT,0);
-
-          //  Gson gson = new Gson();
 
             String h = edtHeight.getText().toString();
             int height = Integer.parseInt(h);
-           // String gheight = gson.toJson(height);
+
 
             String w = edtWeight.getText().toString();
             int weight = Integer.parseInt(w);
-           // String gweight = gson.toJson(weight);
+
 
             String bmiResult = txtBMI_Result.getText().toString();
-           // String gbmiResult = gson.toJson(bmiResult);
+
 
 
             if(chk.isChecked()) { //اذا كابس عالتشيك بوكي (يعني قيمتها true)
                 if (!flag) {
-                    editor.putInt(HEIGHT,height);
-                    editor.putInt(WEIGHT,weight);
-                    editor.putString(BMI_RESULT,bmiResult);
-                    editor.putString(STATUS,status);
-                    editor.putBoolean(FLAG,true);
-                    editor.putBoolean(FLAGBMI,true);
+                    BMI_Data bmi = new BMI_Data(status,bmiResult,weight,height,true,calculateIsClicked);
+
+                    Gson gson = new Gson();
+                    String bmiString = gson.toJson(bmi);
+
+                    editor.putString(DATA,bmiString);
+
                     editor.commit();
                 }
 
                 else if(flag && (weight != Weight || height != Height)){
                     if (checkCahngeBmi) {
-                        editor.putInt(HEIGHT, height);
-                        editor.putInt(WEIGHT, weight);
-                        editor.putString(BMI_RESULT, bmiResult);
-                        editor.putString(STATUS,status);
-                        editor.putBoolean(FLAG, true);
-                        editor.putBoolean(FLAGBMI, true);
+                        BMI_Data bmi = new BMI_Data(status,bmiResult,weight,height,true,calculateIsClicked);
+
+                        Gson gson = new Gson();
+                        String bmiString = gson.toJson(bmi);
+
+                        editor.putString(DATA,bmiString);
+
                         editor.commit();
                     }
                     else{
